@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Juego Leyes de Potencias</title>
+<style>
+:root {
+    --primary: #6366f1;
+    --success: #22c55e;
+    --error: #ef4444;
+    --dark: #1e293b;
+    --bg: #0f172a;
+}
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: var(--bg);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+}
+.card {
+    background: #1e293b;
+    padding: 2rem;
+    border-radius: 1.5rem;
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);
+    width: 95%;
+    max-width: 600px;
+    text-align: center;
+    color: white;
+}
+.stats {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    font-weight: 800;
+    color: #94a3b8;
+    font-size: 0.9rem;
+}
+.lvl-tag {
+    background: var(--primary);
+    padding: 5px 15px;
+    border-radius: 20px;
+    margin-bottom: 10px;
+    display: inline-block;
+}
+.expression-box {
+    font-size: 2.2rem;
+    padding: 1.5rem;
+    background: #020617;
+    border-radius: 1rem;
+    margin: 1rem 0;
+    min-height: 70px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+/* Exponentes más altos y claros */
+sup {
+    font-size: 0.5em;
+    vertical-align: baseline;
+    position: relative;
+    top: -0.6em;
+    margin-left: 2px;
+}
+
+.input-area {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+}
+button {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 0.7rem 1rem;
+    font-size: 1rem;
+    border-radius: 0.6rem;
+    cursor: pointer;
+}
+button:hover { transform: scale(1.05); }
+.feedback { margin-top: 1rem; font-weight: bold; }
+.correct { color: var(--success); }
+.incorrect { color: var(--error); }
+.progress-bar { height: 8px; background: #334155; border-radius: 4px; margin-top: 15px; }
+.progress-fill { height: 100%; background: var(--success); width: 0%; }
+</style>
+</head>
+<body>
+
+<div class="card">
+<div class="stats">
+<span>Aciertos: <span id="hits">0</span>/8</span>
+<span>Intentos: <span id="tries">0</span></span>
+</div>
+
+<div class="lvl-tag" id="lvl-name">Nivel 1</div>
+
+<div class="expression-box" id="problem"></div>
+
+<div id="answerDisplay" class="expression-box" style="font-size:1.6rem;"></div>
+
+<div class="input-area">
+<button onclick="addNumber(1)">1</button>
+<button onclick="addNumber(2)">2</button>
+<button onclick="addNumber(3)">3</button>
+<button onclick="addNumber(4)">4</button>
+<button onclick="addNumber(5)">5</button>
+<button onclick="addNumber(6)">6</button>
+<button onclick="addNumber(7)">7</button>
+<button onclick="addNumber(8)">8</button>
+<button onclick="addNumber(9)">9</button>
+<button onclick="addNumber(0)">0</button>
+<button onclick="addPower()">^</button>
+<button onclick="addMinus()">-</button>
+<button onclick="clearAnswer()">⌫</button>
+<button onclick="check()">Verificar</button>
+</div>
+
+<div id="feedback" class="feedback"></div>
+<div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+</div>
+
+<script>
+const bancoEjercicios = {
+1: [
+{e:"2<sup>3</sup> · 2<sup>4</sup>", a:"2^7"},
+{e:"5<sup>2</sup> · 5<sup>3</sup>", a:"5^5"},
+{e:"3<sup>4</sup> · 3<sup>2</sup>", a:"3^6"},
+{e:"7<sup>1</sup> · 7<sup>5</sup>", a:"7^6"},
+{e:"10<sup>2</sup> · 10<sup>3</sup>", a:"10^5"},
+// negativos
+{e:"2<sup>3</sup> · 2<sup>-5</sup>", a:"2^-2"},
+{e:"4<sup>-2</sup> · 4<sup>1</sup>", a:"4^-1"},
+{e:"3<sup>-3</sup> · 3<sup>-2</sup>", a:"3^-5"}
+],
+2: [
+{e:"2<sup>7</sup> ÷ 2<sup>3</sup>", a:"2^4"},
+{e:"5<sup>6</sup> ÷ 5<sup>2</sup>", a:"5^4"},
+{e:"3<sup>8</sup> ÷ 3<sup>5</sup>", a:"3^3"},
+{e:"9<sup>5</sup> ÷ 9<sup>2</sup>", a:"9^3"},
+{e:"10<sup>7</sup> ÷ 10<sup>4</sup>", a:"10^3"},
+// negativos
+{e:"2<sup>3</sup> ÷ 2<sup>6</sup>", a:"2^-3"},
+{e:"5<sup>-2</sup> ÷ 5<sup>1</sup>", a:"5^-3"},
+{e:"3<sup>-1</sup> ÷ 3<sup>-4</sup>", a:"3^3"}
+],
+3: [
+{e:"(2<sup>3</sup>)<sup>4</sup>", a:"2^12"},
+{e:"(5<sup>2</sup>)<sup>3</sup>", a:"5^6"},
+{e:"(3<sup>4</sup>)<sup>2</sup>", a:"3^8"},
+{e:"(7<sup>2</sup>)<sup>5</sup>", a:"7^10"},
+{e:"(10<sup>3</sup>)<sup>2</sup>", a:"10^6"},
+// negativos
+{e:"(2<sup>-3</sup>)<sup>2</sup>", a:"2^-6"},
+{e:"(5<sup>2</sup>)<sup>-3</sup>", a:"5^-6"},
+{e:"(3<sup>-1</sup>)<sup>4</sup>", a:"3^-4"}
+],
+4: [
+{e:"2<sup>3</sup> · 2<sup>2</sup> ÷ 2<sup>1</sup>", a:"2^4"},
+{e:"(3<sup>2</sup>)<sup>3</sup> · 3<sup>1</sup>", a:"3^7"},
+{e:"5<sup>6</sup> ÷ 5<sup>2</sup> · 5<sup>1</sup>", a:"5^5"},
+{e:"(2<sup>2</sup>)<sup>3</sup> ÷ 2<sup>2</sup>", a:"2^4"},
+{e:"10<sup>5</sup> · 10<sup>2</sup> ÷ 10<sup>3</sup>", a:"10^4"},
+// negativos
+{e:"2<sup>3</sup> · 2<sup>-4</sup> ÷ 2<sup>1</sup>", a:"2^-2"},
+{e:"(3<sup>-2</sup>)<sup>2</sup> · 3<sup>1</sup>", a:"3^-3"},
+{e:"5<sup>2</sup> ÷ 5<sup>5</sup> · 5<sup>-1</sup>", a:"5^-4"}
+],
+5: [
+{e:"(2<sup>3</sup> · 2<sup>2</sup>)<sup>2</sup>", a:"2^10"},
+{e:"(3<sup>4</sup> ÷ 3<sup>2</sup>)<sup>3</sup>", a:"3^6"},
+{e:"(5<sup>2</sup>)<sup>3</sup> · 5<sup>4</sup>", a:"5^10"},
+{e:"(2<sup>5</sup> ÷ 2<sup>3</sup>)<sup>2</sup>", a:"2^4"},
+{e:"((3<sup>2</sup>)<sup>2</sup> · 3<sup>3</sup>)", a:"3^7"},
+// negativos
+{e:"(2<sup>3</sup> · 2<sup>-5</sup>)<sup>2</sup>", a:"2^-4"},
+{e:"(3<sup>-4</sup> ÷ 3<sup>-2</sup>)<sup>2</sup>", a:"3^-4"},
+{e:"(5<sup>2</sup>)<sup>-1</sup> · 5<sup>-3</sup>", a:"5^-5"}
+]
+};
+
+let nivelActual = 1;
+let aciertos = 0;
+let intentos = 0;
+let ejercicioActivo;
+let listaMezclada = [];
+let respuestaUsuario = "";
+let bloqueado = false;
+
+function mezclar(a){ return a.sort(()=>Math.random()-0.5); }
+
+function cargarNivel(){
+listaMezclada = mezclar([...bancoEjercicios[nivelActual]]);
+aciertos = 0;
+document.getElementById('lvl-name').innerText = `Nivel ${nivelActual}`;
+actualizarUI();
+nuevoEjercicio();
+}
+
+let contadorPreguntas = 0;
+
+function nuevoEjercicio(){
+    contadorPreguntas++;
+
+    if (listaMezclada.length === 0) {
+        listaMezclada = mezclar([...bancoEjercicios[nivelActual]]);
+    }
+
+    // Evitar exponentes negativos en las primeras 3 preguntas
+    if (contadorPreguntas <= 3) {
+        let intento;
+        do {
+            intento = listaMezclada.shift();
+        } while (intento.e.includes("-"));
+        ejercicioActivo = intento;
+    } else {
+        ejercicioActivo = listaMezclada.shift();
+    }
+
+    document.getElementById('problem').innerHTML = ejercicioActivo.e;
+    respuestaUsuario = "";
+    renderRespuesta();
+}
+
+function actualizarUI(){
+document.getElementById('hits').innerText = aciertos;
+document.getElementById('tries').innerText = intentos;
+document.getElementById('progress').style.width = (aciertos*12.5)+"%";
+}
+
+function addNumber(n){ respuestaUsuario+=n; renderRespuesta(); }
+function addPower(){ respuestaUsuario+="^"; renderRespuesta(); }
+function addMinus(){ respuestaUsuario+="-"; renderRespuesta(); }
+function clearAnswer(){ respuestaUsuario=respuestaUsuario.slice(0,-1); renderRespuesta(); }
+
+function renderRespuesta(){
+let visual = respuestaUsuario.replace(/\^(-?\d+)/g,"<sup>$1</sup>");
+document.getElementById("answerDisplay").innerHTML = visual;
+}
+
+function normalizar(t){ return t.replace(/\s/g,""); }
+
+function check(){
+if(bloqueado) return;
+bloqueado = true;
+const user = normalizar(respuestaUsuario);
+const correct = normalizar(ejercicioActivo.a);
+intentos++;
+
+if(user===correct){
+aciertos++;
+document.getElementById('feedback').innerHTML='<span class="correct">¡Correcto! ✨</span>';
+if(aciertos>=8) subirNivel(); else setTimeout(()=>{bloqueado=false;nuevoEjercicio();},1000);
+}else{
+document.getElementById('feedback').innerHTML=`<span class="incorrect">Incorrecto ❌</span>`;
+listaMezclada.push(ejercicioActivo);
+setTimeout(()=>{bloqueado=false;nuevoEjercicio();},1500);
+}
+actualizarUI();
+}
+
+function subirNivel(){
+if(nivelActual<5){
+nivelActual++;
+document.getElementById('feedback').innerHTML='<span class="correct">Nivel superado 🚀</span>';
+setTimeout(()=>{bloqueado=false;cargarNivel();},1500);
+}else{
+document.querySelector('.card').innerHTML='<h1>🏆 ¡Maestro de las potencias!</h1>';
+}
+}
+
+// ⌨️ Soporte para teclado (incluye * como potencia alternativa)
+window.addEventListener('keydown', (e) => {
+    if (e.key >= '0' && e.key <= '9') {
+        respuestaUsuario += e.key;
+        renderRespuesta();
+    }
+    // Permitir ^ o * como potencia
+    if (e.key === '^' || e.key === '*') {
+        respuestaUsuario += '^';
+        renderRespuesta();
+    }
+    // Permitir negativo
+    if (e.key === '-') {
+        respuestaUsuario += '-';
+        renderRespuesta();
+    }
+    if (e.key === 'Backspace') {
+        respuestaUsuario = respuestaUsuario.slice(0, -1);
+        renderRespuesta();
+    }
+    if (e.key === 'Enter') {
+        check();
+    }
+});
+
+cargarNivel();
+</script>
+
+</body>
+</html>
